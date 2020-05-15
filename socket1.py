@@ -1,13 +1,38 @@
-if __name__=="__main__":
-    input_bytes=b'\xff\xfe4\x001\x003\x00 \x00i\x00s\x00 \x00i\x00n\x00.\x00'
+import socket,argparse
+from datetime import datetime
+
+MAX_BYTES=65535
 
 
-    input_character=input_bytes.decode('utf-16')
-    print(repr(input_character))
+def server(port):
+    sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    sock.bind(("127.0.0.1",port))
+    print("listening at {}".format(sock.getsockname()))
 
-    output_charater="we copy you donw. Egale.\n"
-    output_bytes=output_charater.encode('utf-8')
-    with open('egale.txt','wb') as f:
-        f.write(output_bytes)
+    while True:
+        data,address=sock.recvfrom(MAX_BYTES)
+        text = data.decode('ascii')
+        print("the {} is saying ....{!r}".format(address,text))
+        print("your data was {} bytes long".format(len(text)))
 
-        
+def client(port):
+    sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    text ='the tiem is {}'.format(datetime.now())
+    data= text.encode('ascii')
+    sock.sendto(data,("127.0.0.1",port))
+    print("the os assigned me the address {}".format(sock.getsockname()))
+    data,address=sock.recvfrom(MAX_BYTES)
+    text=data.decode('ascii')
+    print('the server replied....{}'.format(text))
+
+
+if __name__=='__main__':
+    choices={'client':client,'server':server}
+    parser=argparse.ArgumentParser(description="send and receive UDP locally")
+    parser.add_argument('role',choices=choices,help='which role to play')
+    parser.add_argument('-p',metavar='PORT',type=int, default=1060,help='udp port(default 1060)')
+
+
+    args=parser.parse_args()
+    function=choices[args.role]
+    function(args.p)
